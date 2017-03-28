@@ -909,6 +909,39 @@ public class ConfigDef {
         }
     }
 
+    public static class ValidName implements Validator {
+        final char[] illegalCharacters = {'/', ' ', '\\', '\n'};
+
+        public static ValidName validName() {
+            return new ValidName();
+        }
+
+        @Override
+        public void ensureValid(String name, Object value) {
+            String s = (String) value;
+
+            if (s == null) {
+                // This can happen during creation of the config object due to no default value being defined for the
+                // name configuration - a missing name parameter is caught when checking for mandatory parameters,
+                // thus we can ok a null value here
+                return;
+            } else if (s.isEmpty()) {
+                throw new ConfigException(name, value, "Name may not be empty");
+            }
+
+            // Check name string for illegal characters
+            ArrayList<Character> foundIllegalCharacters = new ArrayList<>();
+            for (char illegalChar : illegalCharacters) {
+                if (s.indexOf(illegalChar) != -1) {
+                    foundIllegalCharacters.add(illegalChar);
+                }
+            }
+            if (!foundIllegalCharacters.isEmpty()) {
+                throw new ConfigException(name, value, "Name contains illegal characters: " + Utils.join(foundIllegalCharacters, ", "));
+            }
+        }
+    }
+
     public static class ConfigKey {
         public final String name;
         public final Type type;

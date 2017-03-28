@@ -193,11 +193,32 @@ public class ConnectorsResourceTest {
         PowerMock.verifyAll();
     }
 
+    // Requests to create a connector that do not contain a name in either the body or the config object should be
+    // rejected outright
     @Test(expected = BadRequestException.class)
-    public void testCreateConnectorWithASlashInItsName() throws Throwable {
-        String badConnectorName = CONNECTOR_NAME + "/" + "test";
+    public void testCreateConnectorWithoutName() throws Throwable {
 
-        CreateConnectorRequest body = new CreateConnectorRequest(badConnectorName, Collections.singletonMap(ConnectorConfig.NAME_CONFIG, badConnectorName));
+        CreateConnectorRequest body = new CreateConnectorRequest(null, Collections.singletonMap(ConnectorConfig.CONNECTOR_CLASS_CONFIG, "org.apache.kafka.connect.tools.MockConnector"));
+
+
+        final Capture<Callback<Herder.Created<ConnectorInfo>>> cb = Capture.newInstance();
+        herder.putConnectorConfig(EasyMock.eq(CONNECTOR_NAME), EasyMock.eq(body.config()), EasyMock.eq(false), EasyMock.capture(cb));
+        expectAndCallbackResult(cb, new Herder.Created<>(true, new ConnectorInfo(CONNECTOR_NAME, CONNECTOR_CONFIG, CONNECTOR_TASK_NAMES)));
+
+        PowerMock.replayAll();
+
+        connectorsResource.createConnector(FORWARD, body);
+
+        PowerMock.verifyAll();
+    }
+
+    // If trying to create a connector with different name values given in the body of the request and the config
+    // object the request should be rejected outright
+    @Test(expected = BadRequestException.class)
+    public void testCreateConnectorWithDifferentNamen() throws Throwable {
+
+        CreateConnectorRequest body = new CreateConnectorRequest("namefrombody", Collections.singletonMap(ConnectorConfig.NAME_CONFIG, "namefromconfig"));
+
 
         final Capture<Callback<Herder.Created<ConnectorInfo>>> cb = Capture.newInstance();
         herder.putConnectorConfig(EasyMock.eq(CONNECTOR_NAME), EasyMock.eq(body.config()), EasyMock.eq(false), EasyMock.capture(cb));

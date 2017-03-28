@@ -86,18 +86,40 @@ public class ConnectorsResource {
     @POST
     @Path("/")
     public Response createConnector(final @QueryParam("forward") Boolean forward,
-                                    final CreateConnectorRequest createRequest) throws Throwable {
-        String name = createRequest.name();
-        if (name.contains("/")) {
-            throw new BadRequestException("connector name should not contain '/'");
-        }
+                                     final CreateConnectorRequest createRequest) throws Throwable {
         Map<String, String> configs = createRequest.config();
-        if (!configs.containsKey(ConnectorConfig.NAME_CONFIG))
-            configs.put(ConnectorConfig.NAME_CONFIG, name);
+        CreateConnectorRequest finalCreateRequest = createRequest;
+
+        String nameFromBody = createRequest.name();
+        String nameFromConfig = createRequest.config().get(ConnectorConfig.NAME_CONFIG);
+        String name = "";
+
+        if (nameFromBody == null && nameFromConfig == null) {
+            // No name parameter given in either body or config, decline request
+            throw new BadRequestException("connector name is missing");
+        }  else if (nameFromBody == null ^ nameFromConfig == null) {
+            // Exactly one of the two names is null, use that name for both values
+            if (nameFromConfig == null) {
+                // Name is missing from config, update there
+                configs.put(ConnectorConfig.NAME_CONFIG, nameFromBody);
+                name = nameFromBody;
+            } else {
+                // Name is missing from body, create a new CreateConnectorRequest with
+                // the name from the config to use going forward
+                name = nameFromConfig;
+                finalCreateRequest = new CreateConnectorRequest(name, configs);
+            }
+        } else if (!nameFromBody.equals(nameFromConfig)) {
+            // both sections contain a name, but they differ
+            throw new BadRequestException("different connector names given in config and request");
+        } else {
+            // Both name parameters are equal, we can use either
+            name = nameFromBody;
+        }
 
         FutureCallback<Herder.Created<ConnectorInfo>> cb = new FutureCallback<>();
         herder.putConnectorConfig(name, configs, false, cb);
-        Herder.Created<ConnectorInfo> info = completeOrForwardRequest(cb, "/connectors", "POST", createRequest,
+        Herder.Created<ConnectorInfo> info = completeOrForwardRequest(cb, "/connectors", "POST", finalCreateRequest,
                 new TypeReference<ConnectorInfo>() { }, new CreatedConnectorInfoTranslator(), forward);
         return Response.created(URI.create("/connectors/" + name)).entity(info.result()).build();
     }
