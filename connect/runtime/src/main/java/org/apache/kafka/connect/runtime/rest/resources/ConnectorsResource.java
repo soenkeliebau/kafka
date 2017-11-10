@@ -88,9 +88,6 @@ public class ConnectorsResource {
     public Response createConnector(final @QueryParam("forward") Boolean forward,
                                     final CreateConnectorRequest createRequest) throws Throwable {
         String name = createRequest.name();
-        if (name.contains("/")) {
-            throw new BadRequestException("connector name should not contain '/'");
-        }
         Map<String, String> configs = createRequest.config();
         if (!configs.containsKey(ConnectorConfig.NAME_CONFIG))
             configs.put(ConnectorConfig.NAME_CONFIG, name);
@@ -99,7 +96,12 @@ public class ConnectorsResource {
         herder.putConnectorConfig(name, configs, false, cb);
         Herder.Created<ConnectorInfo> info = completeOrForwardRequest(cb, "/connectors", "POST", createRequest,
                 new TypeReference<ConnectorInfo>() { }, new CreatedConnectorInfoTranslator(), forward);
-        return Response.created(URI.create("/connectors/" + name)).entity(info.result()).build();
+        // the URI constructor does not encode the slash character in the path parameter, as this would usually be a legal
+        // part of the path - so we first encode the name and then manually replace any slashes with the encoded sequence
+        String encodedName = new URI(null, null, null, -1, name, null, null)
+                .toString()
+                .replace("/", "%2F");
+        return Response.created(URI.create("/connectors/" + encodedName)).entity(info.result()).build();
     }
 
     @GET
