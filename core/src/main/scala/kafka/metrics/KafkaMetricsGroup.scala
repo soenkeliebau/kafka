@@ -61,7 +61,7 @@ trait KafkaMetricsGroup extends Logging {
 
     if (name.length > 0) {
       nameBuilder.append(",name=")
-      nameBuilder.append(name)
+      nameBuilder.append(Sanitizer.jmxSanitize(name))
     }
 
     val scope: String = KafkaMetricsGroup.toScope(tags).getOrElse(null)
