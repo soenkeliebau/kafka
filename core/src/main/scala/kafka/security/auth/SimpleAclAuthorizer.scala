@@ -148,7 +148,7 @@ class SimpleAclAuthorizer extends Authorizer with Logging {
       acl.permissionType == permissionType &&
         (acl.principal == principal || acl.principal == Acl.WildCardPrincipal) &&
         (operations == acl.operation || acl.operation == All) &&
-        (acl.host == host || acl.host == Acl.WildCardHost)
+        (acl.hostMatch(host))
     }.exists { acl =>
       authorizerLogger.debug(s"operation = $operations on resource = $resource from host = $host is $permissionType based on acl = $acl")
       true

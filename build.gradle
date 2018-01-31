@@ -547,6 +547,7 @@ project(':core') {
     compile project(':clients')
     compile libs.jacksonDatabind
     compile libs.joptSimple
+    compile libs.ipmath
     compile libs.metrics
     compile libs.scalaLibrary
     // only needed transitively, but set it explicitly to ensure it has the same version as scala-library

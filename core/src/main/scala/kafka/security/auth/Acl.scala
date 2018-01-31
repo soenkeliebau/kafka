@@ -18,6 +18,7 @@
 package kafka.security.auth
 
 import kafka.utils.Json
+import net.ripe.commons.ip.{Ipv4, Ipv4Range}
 import org.apache.kafka.common.security.auth.KafkaPrincipal
 import org.apache.kafka.common.utils.SecurityUtils
 import scala.collection.JavaConverters._
@@ -25,6 +26,7 @@ import scala.collection.JavaConverters._
 object Acl {
   val WildCardPrincipal: KafkaPrincipal = new KafkaPrincipal(KafkaPrincipal.USER_TYPE, "*")
   val WildCardHost: String = "*"
+  val WildCardRange: String = "0.0.0.0/0"
   val AllowAllAcl = new Acl(WildCardPrincipal, Allow, WildCardHost, All)
   val PrincipalKey = "principal"
   val PermissionTypeKey = "permissionType"
@@ -71,6 +73,24 @@ object Acl {
     }.getOrElse(Set.empty)
   }
 
+  def hostParse(hostToParse: String): scala.collection.mutable.Set[Ipv4Range] = {
+    val host = scala.collection.mutable.Set[Ipv4Range]()
+    hostToParse
+      .split(',')
+      .foreach(s => host += Ipv4Range.parse(cleanHost(s)))
+    host
+  }
+
+  def cleanHost(hostToClean: String): String = {
+    if (hostToClean.equals(WildCardHost))
+      return WildCardRange
+
+    if (!(hostToClean.contains('-') || hostToClean.contains('/')))
+      return hostToClean.concat("-").concat(hostToClean)
+
+    return hostToClean
+  }
+
   def toJsonCompatibleMap(acls: Set[Acl]): Map[String, Any] = {
     Map(Acl.VersionKey -> Acl.CurrentVersion, Acl.AclsKey -> acls.map(acl => acl.toMap.asJava).toList.asJava)
   }
@@ -87,6 +107,7 @@ object Acl {
  * @param operation A value of ALL indicates all operations.
  */
 case class Acl(principal: KafkaPrincipal, permissionType: PermissionType, host: String, operation: Operation) {
+  val hostRanges = Acl.hostParse(host)
 
   /**
    * TODO: Ideally we would have a symmetric toJson method but our current json library can not jsonify/dejsonify complex objects.
@@ -97,6 +118,10 @@ case class Acl(principal: KafkaPrincipal, permissionType: PermissionType, host: 
       Acl.PermissionTypeKey -> permissionType.name,
       Acl.OperationKey -> operation.name,
       Acl.HostsKey -> host)
+  }
+
+  def hostMatch(hostToCheck: String): Boolean = {
+    hostRanges.exists(h => h.contains(Ipv4.parse(hostToCheck)))
   }
 
   override def toString: String = {
