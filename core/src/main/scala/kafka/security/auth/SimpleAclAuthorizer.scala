@@ -106,6 +106,12 @@ class SimpleAclAuthorizer extends Authorizer with Logging {
     val host = session.clientAddress.getHostAddress
     val acls = getAcls(resource) ++ getAcls(new Resource(resource.resourceType, Resource.WildCardResource))
 
+    // Check if the user is a super user to avoid needlessly checking all ACLs
+    // for super users
+    if (isSuperUser(operation, resource, principal, host)) {
+      return true
+    }
+
     // Check if there is any Deny acl match that would disallow this operation.
     val denyMatch = aclMatch(operation, resource, principal, host, Deny, acls)
 
@@ -119,10 +125,9 @@ class SimpleAclAuthorizer extends Authorizer with Logging {
     }
     val allowMatch = allowOps.exists(operation => aclMatch(operation, resource, principal, host, Allow, acls))
 
-    //we allow an operation if a user is a super user or if no acls are found and user has configured to allow all users
+    //we allow an operation if no acls are found and user has configured to allow all users
     //when no acls are found or if no deny acls are found and at least one allow acls matches.
-    val authorized = isSuperUser(operation, resource, principal, host) ||
-      isEmptyAclAndAuthorized(operation, resource, principal, host, acls) ||
+    val authorized = isEmptyAclAndAuthorized(operation, resource, principal, host, acls) ||
       (!denyMatch && allowMatch)
 
     logAuditMessage(principal, authorized, operation, resource, host)
