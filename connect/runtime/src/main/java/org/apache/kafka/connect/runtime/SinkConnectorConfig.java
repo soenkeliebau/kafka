@@ -16,6 +16,7 @@
  */
 package org.apache.kafka.connect.runtime;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigException;
@@ -23,6 +24,7 @@ import org.apache.kafka.connect.runtime.isolation.Plugins;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.apache.kafka.connect.transforms.util.RegexValidator;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -64,12 +66,27 @@ public class SinkConnectorConfig extends ConnectorConfig {
             "keys, all error context header keys will start with <code>__connect.errors.</code>";
     private static final String DLQ_CONTEXT_HEADERS_ENABLE_DISPLAY = "Enable Error Context Headers";
 
+    // Default values for consumer config
+    public static final String CONSUMER_ENABLE_AUTO_COMMIT_CONFIG_DEFAULT = "false";
+    public static final String CONSUMER_AUTO_OFFSET_RESET_CONFIG_DEFAULT = "earliest";
+    public static final String CONSUMER_KEY_DESERIALIZER_CLASS_CONFIG_DEFAULT = "org.apache.kafka.common.serialization.ByteArrayDeserializer";
+    public static final String CONSUMER_VALUE_DESERIALIZER_CLASS_CONFIG_DEFAULT = "org.apache.kafka.common.serialization.ByteArrayDeserializer";
+
     static ConfigDef config = ConnectorConfig.configDef()
         .define(TOPICS_CONFIG, ConfigDef.Type.LIST, TOPICS_DEFAULT, ConfigDef.Importance.HIGH, TOPICS_DOC, COMMON_GROUP, 4, ConfigDef.Width.LONG, TOPICS_DISPLAY)
         .define(TOPICS_REGEX_CONFIG, ConfigDef.Type.STRING, TOPICS_REGEX_DEFAULT, new RegexValidator(), ConfigDef.Importance.HIGH, TOPICS_REGEX_DOC, COMMON_GROUP, 4, ConfigDef.Width.LONG, TOPICS_REGEX_DISPLAY)
         .define(DLQ_TOPIC_NAME_CONFIG, ConfigDef.Type.STRING, DLQ_TOPIC_DEFAULT, Importance.MEDIUM, DLQ_TOPIC_NAME_DOC, ERROR_GROUP, 6, ConfigDef.Width.MEDIUM, DLQ_TOPIC_DISPLAY)
         .define(DLQ_TOPIC_REPLICATION_FACTOR_CONFIG, ConfigDef.Type.SHORT, DLQ_TOPIC_REPLICATION_FACTOR_CONFIG_DEFAULT, Importance.MEDIUM, DLQ_TOPIC_REPLICATION_FACTOR_CONFIG_DOC, ERROR_GROUP, 7, ConfigDef.Width.MEDIUM, DLQ_TOPIC_REPLICATION_FACTOR_CONFIG_DISPLAY)
         .define(DLQ_CONTEXT_HEADERS_ENABLE_CONFIG, ConfigDef.Type.BOOLEAN, DLQ_CONTEXT_HEADERS_ENABLE_DEFAULT, Importance.MEDIUM, DLQ_CONTEXT_HEADERS_ENABLE_DOC, ERROR_GROUP, 8, ConfigDef.Width.MEDIUM, DLQ_CONTEXT_HEADERS_ENABLE_DISPLAY);
+
+    public static final Map<String, Object> CONSUMER_DEFAULT_CONFIGS;
+    static {
+        CONSUMER_DEFAULT_CONFIGS = new HashMap<>();
+        CONSUMER_DEFAULT_CONFIGS.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, CONSUMER_ENABLE_AUTO_COMMIT_CONFIG_DEFAULT);
+        CONSUMER_DEFAULT_CONFIGS.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, CONSUMER_AUTO_OFFSET_RESET_CONFIG_DEFAULT);
+        CONSUMER_DEFAULT_CONFIGS.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, CONSUMER_KEY_DESERIALIZER_CLASS_CONFIG_DEFAULT);
+        CONSUMER_DEFAULT_CONFIGS.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CONSUMER_VALUE_DESERIALIZER_CLASS_CONFIG_DEFAULT);
+    }
 
     public static ConfigDef configDef() {
         return config;

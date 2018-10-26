@@ -511,17 +511,9 @@ public class Worker {
     }
 
     private Map<String, Object> producerConfigs() {
-        Map<String, Object> producerProps = new HashMap<>();
+        Map<String, Object> producerProps = SourceConnectorConfig.PRODUCER_DEFAULT_CONFIGS;
         producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, Utils.join(config.getList(WorkerConfig.BOOTSTRAP_SERVERS_CONFIG), ","));
-        producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
-        producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
-        // These settings are designed to ensure there is no data loss. They *may* be overridden via configs passed to the
-        // worker, but this may compromise the delivery guarantees of Kafka Connect.
-        producerProps.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, Integer.toString(Integer.MAX_VALUE));
-        producerProps.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, Long.toString(Long.MAX_VALUE));
-        producerProps.put(ProducerConfig.ACKS_CONFIG, "all");
-        producerProps.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "1");
-        producerProps.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, Integer.toString(Integer.MAX_VALUE));
+
         // User-specified overrides
         producerProps.putAll(config.originalsWithPrefix("producer."));
         return producerProps;
@@ -531,16 +523,13 @@ public class Worker {
     private Map<String, Object> consumerConfig(ConnectorConfig connConfig, ConnectorTaskId id) {
         // Include any unknown worker configs so consumer configs can be set globally on the worker
         // and through to the task
-        Map<String, Object> props = new HashMap<>();
+        Map<String, Object> props = SinkConnectorConfig.CONSUMER_DEFAULT_CONFIGS;
 
         props.put(ConsumerConfig.GROUP_ID_CONFIG, SinkUtils.consumerGroupId(id.connector()));
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
                   Utils.join(config.getList(WorkerConfig.BOOTSTRAP_SERVERS_CONFIG), ","));
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
 
+        // User-specified overrides
         props.putAll(config.originalsWithPrefix("consumer."));
         return props;
     }

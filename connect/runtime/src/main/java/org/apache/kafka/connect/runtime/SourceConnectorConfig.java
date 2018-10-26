@@ -16,9 +16,11 @@
  */
 package org.apache.kafka.connect.runtime;
 
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.runtime.isolation.Plugins;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class SourceConnectorConfig extends ConnectorConfig {
@@ -31,6 +33,30 @@ public class SourceConnectorConfig extends ConnectorConfig {
 
     public SourceConnectorConfig(Plugins plugins, Map<String, String> props) {
         super(plugins, config, props);
+    }
+
+    // Default configuration values for the producer
+    public static final String PRODUCER_KEY_SERIALIZER_CLASS_CONFIG_DEFAULT = "org.apache.kafka.common.serialization.ByteArraySerializer";
+    public static final String PRODUCER_VALUE_SERIALIZER_CLASS_CONFIG_DEFAULT = "org.apache.kafka.common.serialization.ByteArraySerializer";
+    public static final String PRODUCER_REQUEST_TIMEOUT_MS_CONFIG_DEFAULT = Integer.toString(Integer.MAX_VALUE);
+    public static final String PRODUCER_MAX_BLOCK_MS_CONFIG_DEFAULT = Long.toString(Long.MAX_VALUE);
+    public static final String PRODUCER_ACKS_CONFIG_DEFAULT = "all";
+    public static final String PRODUCER_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION_DEFAULT = "1";
+    public static final String PRODUCER_DELIVERY_TIMEOUT_MS_CONFIG_DEFAULT = Integer.toString(Integer.MAX_VALUE);
+
+    public static final Map<String, Object> PRODUCER_DEFAULT_CONFIGS;
+    static {
+        PRODUCER_DEFAULT_CONFIGS = new HashMap<>();
+        PRODUCER_DEFAULT_CONFIGS.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, PRODUCER_KEY_SERIALIZER_CLASS_CONFIG_DEFAULT);
+        PRODUCER_DEFAULT_CONFIGS.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, PRODUCER_VALUE_SERIALIZER_CLASS_CONFIG_DEFAULT);
+
+        // These settings are designed to ensure there is no data loss. They *may* be overridden via configs passed to the
+        // worker, but this may compromise the delivery guarantees of Kafka Connect.
+        PRODUCER_DEFAULT_CONFIGS.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, PRODUCER_REQUEST_TIMEOUT_MS_CONFIG_DEFAULT);
+        PRODUCER_DEFAULT_CONFIGS.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, PRODUCER_MAX_BLOCK_MS_CONFIG_DEFAULT);
+        PRODUCER_DEFAULT_CONFIGS.put(ProducerConfig.ACKS_CONFIG, PRODUCER_ACKS_CONFIG_DEFAULT);
+        PRODUCER_DEFAULT_CONFIGS.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, PRODUCER_MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION_DEFAULT);
+        PRODUCER_DEFAULT_CONFIGS.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, PRODUCER_DELIVERY_TIMEOUT_MS_CONFIG_DEFAULT);
     }
 
     public static void main(String[] args) {
