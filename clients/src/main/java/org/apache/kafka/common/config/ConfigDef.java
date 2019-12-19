@@ -1452,14 +1452,12 @@ public class ConfigDef {
         boolean hasUpdateModes = !dynamicUpdateModes.isEmpty();
         List<ConfigKey> configs = sortedConfigs();
         StringBuilder b = new StringBuilder();
-        //b.append("<ul class=\"config-list\">\n");
 
         for (ConfigKey key : configs) {
             if (key.internalConfig) {
                 continue;
             }
-            b.append("<h4>");
-            b.append(key.name);
+            b.append(String.format("<h4><a id=\"%1$s\" href=\"#%1$s\">%1$s</a></h4>", key.name));
             b.append("<p>");
             b.append(key.documentation.replaceAll("\n", "<br>"));
             b.append("</p>");
