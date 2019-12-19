@@ -1452,20 +1452,20 @@ public class ConfigDef {
         boolean hasUpdateModes = !dynamicUpdateModes.isEmpty();
         List<ConfigKey> configs = sortedConfigs();
         StringBuilder b = new StringBuilder();
-        b.append("<ul class=\"config-list\">\n");
+        //b.append("<ul class=\"config-list\">\n");
 
         for (ConfigKey key : configs) {
             if (key.internalConfig) {
                 continue;
             }
-            b.append("<li>");
-            b.append("<b>");
+            b.append("<h4>");
             b.append(key.name);
-            b.append("</b>: ");
-            b.append(key.documentation);
-            b.append("<br/>");
+            b.append("<p>");
+            b.append(key.documentation.replaceAll("\n", "<br>"));
+            b.append("</p>");
+
             // details
-            b.append("<ul class=\"horizontal-list\">");
+            b.append("<ul>");
             for (String detail : headers()) {
                 if (detail.equals("Name") || detail.equals("Description")) continue;
                 addConfigDetail(b, detail, getConfigValue(key, detail));
@@ -1479,7 +1479,6 @@ public class ConfigDef {
             b.append("</ul>");
             b.append("</li>\n");
         }
-        b.append("</ul>\n");
         return b.toString();
     }
 
